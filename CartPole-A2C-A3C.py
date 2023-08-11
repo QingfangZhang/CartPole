@@ -43,6 +43,21 @@ class ValueModel(nn.Module):
             nn.init.kaiming_uniform_(m.weight, nonlinearity='relu')
 
 
+@torch.no_grad()
+def evaluate_model():
+    state, _ = env.reset()
+    for m in count():
+        state = torch.tensor(state, dtype=torch.float32, device=device).reshape(1, -1)
+        action = torch.argmax(policy_net(state).reshape(-1))
+        next_state, reward, terminated, truncated, _ = env.step(action.item())
+        if terminated or truncated:
+            state, _ = env.reset()
+            break
+        else:
+            state = next_state
+    return m+1
+
+
 lr_policy = 0.001
 lr_value = 0.001
 episode_num = 2000
@@ -64,7 +79,7 @@ value_loss = nn.MSELoss()
 
 loss_list = []
 step_list = []
-
+eval_step_list = []
 for i in range(episode_num):
     state, _ = env.reset()
     state = torch.tensor(state, dtype=torch.float32, device=device).reshape(1, -1)
@@ -124,6 +139,15 @@ for i in range(episode_num):
     plt.figure(1)
     plt.clf()
     plt.plot(step_list)
+    plt.xlabel('episode_num')
+    plt.ylabel('step_num')
+    plt.pause(0.001)
+
+    if i % 20 == 0:
+        eval_step_list.append(evaluate_model())
+    plt.figure(2)
+    plt.clf()
+    plt.plot(torch.arange(len(eval_step_list)) * 20, eval_step_list)
     plt.xlabel('episode_num')
     plt.ylabel('step_num')
     plt.pause(0.001)
