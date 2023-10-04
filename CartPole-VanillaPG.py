@@ -77,6 +77,8 @@ value_loss = nn.MSELoss()
 loss_list = []
 step_list = []
 eval_step_list = []
+valueloss_list = []
+policyloss_list = []
 for i in range(episode_num):
     state, _ = env.reset()
     state = torch.tensor(state, dtype=torch.float32, device=device).reshape(1, -1)
@@ -118,6 +120,7 @@ for i in range(episode_num):
     l.backward()
     # torch.nn.utils.clip_grad_norm_(value_net.parameters(), 0.5)
     value_optimizer.step()
+    valueloss_list.append(l.item())
 
     Adv = return_b - pred_v.detach()
     logpi = policy_net(state_b)
@@ -125,12 +128,22 @@ for i in range(episode_num):
     policy_optimizer.zero_grad()
     policy_loss.backward()
     policy_optimizer.step()
+    policyloss_list.append(policy_loss.item())
 
-    plt.figure(1)
-    plt.clf()
-    plt.plot(step_list)
-    plt.xlabel('episode_num')
-    plt.ylabel('step_num')
+    # plt.figure(1)
+    # plt.clf()
+    # plt.plot(step_list)
+    # plt.xlabel('episode_num')
+    # plt.ylabel('step_num')
+    # plt.pause(0.001)
+
+    fig, axs = plt.subplots(nrows=2, ncols=2, num=1, clear=True, figsize=(10, 5))
+    axs[0, 0].plot(step_list)
+    axs[0, 0].set_ylabel('step_num')
+    axs[1, 0].plot(valueloss_list)
+    axs[1, 0].set_ylabel('value loss')
+    axs[1, 1].plot(policyloss_list)
+    axs[1, 1].set_ylabel('policy loss')
     plt.pause(0.001)
 
     if i % 20 == 0:
